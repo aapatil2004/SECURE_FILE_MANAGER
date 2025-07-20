@@ -71,56 +71,17 @@ public class ClientHandler implements Runnable {
                     return;
                 }
             }
-
-            writer.write("command :\n");
-            writer.flush();
+            ShellUI shell = new ShellUI(currentDir, writer);
             String input;
             while ((input = reader.readLine()) != null) {
-                String[] tokens = input.trim().split("\\s+");
-                String command = tokens[0];
-
-                switch (command) {
-                    case "ls":
-                        if (currentDir == null) {
-                            writer.write("Directory not initialized.\n");
-                        } else {
-                            File[] files = currentDir.listFiles();
-                            if (files == null || files.length == 0) {
-                                writer.write("No files found.\n");
-                            } else {
-                                for (File f : files) {
-                                    writer.write(f.getName() + (f.isDirectory() ? "/\n" : "\n"));
-                                }
-                            }
-                        }
-                        writer.flush();
-                        break;
-                    case "pwd":
-                        writer.write("Current working directory: " + currentDir.getAbsolutePath() + "\n");
-                        writer.flush();
-                        break;
-                    case "mkdir":
-                        if (tokens.length < 2)
-                            writer.write("Usage: mkdir <foldername>\n");
-                        else {
-                            File newFolder = new File(currentDir, tokens[1]);
-                            if (newFolder.mkdir()) {
-                                writer.write("Folder created: " + newFolder.getName() + "\n");
-                            } else {
-                                writer.write("Failed to create folder. \n");
-                            }
-                        }
-                        writer.flush();
-                        break;
-                    case "exit":
-                        writer.write("GoodBye !\n");
-                        writer.flush();
-                        clientSocket.close();
-                        return;
-                    default:
-                        writer.write("Unknown command\n");
-                        writer.flush();
+                
+                if (input.trim().equals("exit")) {
+                    shell.handleCommand("exit");
+                    clientSocket.close();
+                    break;
                 }
+                shell.handleCommand(input);
+
             }
         }
 
