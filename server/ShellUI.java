@@ -1,6 +1,7 @@
 package server;
 
 import java.io.*;
+import java.net.Socket;
 
 public class ShellUI {
 
@@ -66,6 +67,68 @@ public class ShellUI {
                 writer.write("Unknown command\n");
                 writer.write("END_OF_RESPONSE\n");
                 writer.flush();
+        }
+    }
+
+    public void uploadCommand(String command, Socket socket) {
+        try {
+            String[] parts = command.split(" ", 2);
+            String filename = parts[1];
+            writer.write("READY\n");
+            writer.flush();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            long fileSize = Long.parseLong(br.readLine());
+
+            File outFile = new File(currentDir, filename);
+            FileOutputStream fos = new FileOutputStream(outFile);
+
+            InputStream is = socket.getInputStream();
+            byte[] buffer = new byte[4096];
+            long remaining = fileSize;
+            int count;
+            while (remaining > 0 && (count = is.read(buffer, 0, (int) Math.min(buffer.length, remaining))) > 0) {
+                fos.write(buffer, 0, count);
+                remaining -= count;
+            }
+            fos.close();
+
+            writer.write("Upload complete.\nEND_OF_RESPONSE\n");
+            writer.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void downloadCommand(String command, Socket socket) {
+        try {
+            String[] parts = command.split(" ", 2);
+            String filename = parts[1];
+            File file = new File(currentDir, filename);
+
+            if (!file.exists()) {
+                writer.write("File not found\nEND_OF_RESPONSE\n");
+                writer.flush();
+                return;
+            }
+
+            writer.write(file.length() + "\n");
+            writer.flush();
+
+            FileInputStream fis = new FileInputStream(file);
+            OutputStream os = socket.getOutputStream();
+            byte[] buffer = new byte[4096];
+            int count;
+            while ((count = fis.read(buffer)) > 0) {
+                os.write(buffer, 0, count);
+            }
+            os.flush();
+            fis.close();
+
+            writer.write("END_OF_RESPONSE\n");
+            writer.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

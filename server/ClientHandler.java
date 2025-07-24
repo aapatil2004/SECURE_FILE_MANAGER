@@ -74,7 +74,22 @@ public class ClientHandler implements Runnable {
             ShellUI shell = new ShellUI(currentDir, writer);
             String input;
             while ((input = reader.readLine()) != null) {
-                
+                System.out.println("Recieved input:" + input);
+                if(input.startsWith("upload"))
+                {
+                    shell.uploadCommand(input, clientSocket);
+                }
+                else if(input.startsWith("download"))
+                {
+                    shell.downloadCommand(input, clientSocket);
+                }
+                else if (input.trim().isEmpty()) {
+                    continue; // Skip empty commands
+                } else if (input.trim().equals("logout")) {
+                    writer.write("Logging out...\n");
+                    writer.flush();
+                    break; // Exit the shell loop
+                } else
                 if (input.trim().equals("exit")) {
                     shell.handleCommand("exit");
                     clientSocket.close();
